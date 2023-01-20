@@ -1,53 +1,16 @@
 import cv2
-from cvzone.HandTrackingModule import HandDetector
-from time import sleep
-import numpy as np
 import cvzone
-from pynput.keyboard import Controller
+from cvzone.HandTrackingModule import HandDetector
+import keyboard as key
+import pyautogui as ptg
+import numpy as np
 
 cap = cv2.VideoCapture(0)
+logo = cv2.imread('res/logo.png', cv2.IMREAD_UNCHANGED)
 cap.set(3, 1280)
 cap.set(4, 720)
 
 detector = HandDetector(detectionCon=0.8)
-keys = [["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "?"],
-        ["A", "S", "D", "F", "G", "H", "J", "K", "L", ";", ","],
-        ["Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", " "]]
-finalText = ""
-
-keyboard = Controller()
-
-
-def drawAll(img, buttonList):
-    for button in buttonList:
-        x, y = button.pos
-        w, h = button.size
-        cvzone.cornerRect(img, (button.pos[0], button.pos[1], button.size[0], button.size[1]),
-                          20, rt=0)
-        cv2.rectangle(img, button.pos, (x + w, y + h), (255, 0, 255), cv2.FILLED)
-        cv2.putText(img, button.text, (x + 20, y + 65),
-                    cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
-    return img
-
-
-
-# def drawAll(img, buttonList):
-#     imgNew = np.zeros_like(img, np.uint8)
-#     for button in buttonList:
-#         x, y = button.pos
-#         cvzone.cornerRect(imgNew, (button.pos[0], button.pos[1], button.size[0], button.size[1]),
-#                           20, rt=0)
-#         cv2.rectangle(imgNew, button.pos, (x + button.size[0], y + button.size[1]),
-#                       (255, 0, 255), cv2.FILLED)
-#         cv2.putText(imgNew, button.text, (x + 40, y + 60),
-#                     cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 3)
-#
-#     out = img.copy()
-#     alpha = 0.5
-#     mask = imgNew.astype(bool)
-#     print(mask.shape)
-#     out[mask] = cv2.addWeighted(img, alpha, imgNew, 1 - alpha, 0)[mask]
-#     return out
 
 
 class Button():
@@ -56,43 +19,560 @@ class Button():
         self.size = size
         self.text = text
 
+    def draw(self, img):
+        x, y = self.pos
+        w, h = self.size
+        cv2.rectangle(img, self.pos, (x + w, y + h), (190, 37, 53), cv2.FILLED)
+        cv2.putText(img, self.text, (x + 20, y + 65),
+                    cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+        return img
 
-buttonList = []
-for i in range(len(keys)):
-    for j, key in enumerate(keys[i]):
-        buttonList.append(Button([100 * j + 50, 100 * i + 50], key))
+
+# First Pad
+myButtonQ = Button([100, 100], 'Q')
+myButtonW = Button([200, 100], 'W')
+myButtonE = Button([300, 100], 'E')
+myButtonR = Button([400, 100], 'R')
+myButtonT = Button([500, 100], 'T')
+myButtonY = Button([600, 100], 'Y')
+myButtonU = Button([700, 100], 'U')
+myButtonI = Button([800, 100], 'I')
+myButtonO = Button([900, 100], 'O')
+myButtonP = Button([1000, 100], 'P')
+
+# Second Pad
+myButtonA = Button([100, 200], 'A')
+myButtonS = Button([200, 200], 'S')
+myButtonD = Button([300, 200], 'D')
+myButtonF = Button([400, 200], 'F')
+myButtonG = Button([500, 200], 'G')
+myButtonH = Button([600, 200], 'H')
+myButtonJ = Button([700, 200], 'J')
+myButtonK = Button([800, 200], 'K')
+myButtonL = Button([900, 200], 'L')
+
+# Third Pad
+myButtonZ = Button([100, 300], 'Z')
+myButtonX = Button([200, 300], 'X')
+myButtonC = Button([300, 300], 'C')
+myButtonV = Button([400, 300], 'V')
+myButtonB = Button([500, 300], 'B')
+myButtonN = Button([600, 300], 'N')
+myButtonM = Button([700, 300], 'M')
+
+# Buttons
+myButtonDEL = Button([100, 400], '<|')
+myButtonENT = Button([200, 400], '|>')
+myButtonSPC = Button([300, 400], '|_')
+myButtonCOM = Button([400, 400], ',')
+myButtonCOL = Button([500, 400], ':')
+myButtonSLS = Button([600, 400], '/')
+myButtonDOT = Button([700, 400], '.')
 
 while True:
     success, img = cap.read()
+
     img = detector.findHands(img)
-    lmList, bboxInfo = detector.findPosition(img)
-    img = drawAll(img, buttonList)
+    lmlist, bboxInfo = detector.findPosition(img)
 
-    if lmList:
-        for button in buttonList:
-            x, y = button.pos
-            w, h = button.size
+    # First Phase
+    img = myButtonQ.draw(img)
+    img = myButtonW.draw(img)
+    img = myButtonE.draw(img)
+    img = myButtonR.draw(img)
+    img = myButtonT.draw(img)
+    img = myButtonY.draw(img)
+    img = myButtonU.draw(img)
+    img = myButtonI.draw(img)
+    img = myButtonO.draw(img)
+    img = myButtonP.draw(img)
 
-            if x < lmList[8][0] < x + w and y < lmList[8][1] < y + h:
-                cv2.rectangle(img, (x - 5, y - 5), (x + w + 5, y + h + 5), (175, 0, 175), cv2.FILLED)
-                cv2.putText(img, button.text, (x + 20, y + 65),
-                            cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
-                l, _, _ = detector.findDistance(8, 12, img, draw=False)
-                print(l)
+    # Second Phase
+    img = myButtonA.draw(img)
+    img = myButtonS.draw(img)
+    img = myButtonD.draw(img)
+    img = myButtonF.draw(img)
+    img = myButtonG.draw(img)
+    img = myButtonH.draw(img)
+    img = myButtonJ.draw(img)
+    img = myButtonK.draw(img)
+    img = myButtonL.draw(img)
 
-                ## when clicked
-                if l < 30:
-                    keyboard.press(button.text)
-                    cv2.rectangle(img, button.pos, (x + w, y + h), (0, 255, 0), cv2.FILLED)
-                    cv2.putText(img, button.text, (x + 20, y + 65),
-                                cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
-                    finalText += button.text
-                    sleep(0.15)
+    # Third Phase
+    img = myButtonZ.draw(img)
+    img = myButtonX.draw(img)
+    img = myButtonC.draw(img)
+    img = myButtonV.draw(img)
+    img = myButtonB.draw(img)
+    img = myButtonN.draw(img)
+    img = myButtonM.draw(img)
 
-    cv2.rectangle(img, (50, 350), (700, 450), (175, 0, 175), cv2.FILLED)
-    cv2.putText(img, finalText, (60, 430),
-                cv2.FONT_HERSHEY_PLAIN, 5, (255, 255, 255), 5)
+    # Buttons
+    img = myButtonDEL.draw(img)
+    img = myButtonENT.draw(img)
+    img = myButtonSPC.draw(img)
+    img = myButtonCOM.draw(img)
+    img = myButtonCOL.draw(img)
+    img = myButtonSLS.draw(img)
+    img = myButtonDOT.draw(img)
 
-    cv2.imshow("Image", img)
-    if cv2.waitKey(10) == ord("q"):
+    xQ, yQ = myButtonQ.pos
+    wQ, hQ = myButtonQ.size
+
+    xW, yW = myButtonW.pos
+    wW, hW = myButtonW.size
+
+    xE, yE = myButtonE.pos
+    wE, hE = myButtonE.size
+
+    xR, yR = myButtonR.pos
+    wR, hR = myButtonR.size
+
+    xT, yT = myButtonT.pos
+    wT, hT = myButtonT.size
+
+    xY, yY = myButtonY.pos
+    wY, hY = myButtonY.size
+
+    xU, yU = myButtonU.pos
+    wU, hU = myButtonU.size
+
+    xI, yI = myButtonI.pos
+    wI, hI = myButtonI.size
+
+    xO, yO = myButtonO.pos
+    wO, hO = myButtonO.size
+
+    xP, yP = myButtonP.pos
+    wP, hP = myButtonP.size
+
+    xA, yA = myButtonA.pos
+    wA, hA = myButtonA.size
+
+    xS, yS = myButtonS.pos
+    wS, hS = myButtonS.size
+
+    xD, yD = myButtonD.pos
+    wD, hD = myButtonD.size
+
+    xF, yF = myButtonF.pos
+    wF, hF = myButtonF.size
+
+    xG, yG = myButtonG.pos
+    wG, hG = myButtonG.size
+
+    xH, yH = myButtonH.pos
+    wH, hH = myButtonH.size
+
+    xJ, yJ = myButtonJ.pos
+    wJ, hJ = myButtonJ.size
+
+    xK, yK = myButtonK.pos
+    wK, hK = myButtonK.size
+
+    xL, yL = myButtonL.pos
+    wL, hL = myButtonL.size
+
+    xZ, yZ = myButtonZ.pos
+    wZ, hZ = myButtonZ.size
+
+    xX, yX = myButtonX.pos
+    wX, hX = myButtonX.size
+
+    xC, yC = myButtonC.pos
+    wC, hC = myButtonC.size
+
+    xV, yV = myButtonV.pos
+    wV, hV = myButtonV.size
+
+    xB, yB = myButtonB.pos
+    wB, hB = myButtonB.size
+
+    xN, yN = myButtonN.pos
+    wN, hN = myButtonN.size
+
+    xM, yM = myButtonM.pos
+    wM, hM = myButtonM.size
+
+    xDEL, yDEL = myButtonDEL.pos
+    wDEL, hDEL = myButtonDEL.size
+
+    xENT, yENT = myButtonENT.pos
+    wENT, hENT = myButtonENT.size
+
+    xSPC, ySPC = myButtonSPC.pos
+    wSPC, hSPC = myButtonSPC.size
+
+    xCOM, yCOM = myButtonCOM.pos
+    wCOM, hCOM = myButtonCOM.size
+
+    xCOL, yCOL = myButtonCOL.pos
+    wCOL, hCOL = myButtonCOL.size
+
+    xSLS, ySLS = myButtonSLS.pos
+    wSLS, hSLS = myButtonSLS.size
+
+    xDOT, yDOT = myButtonDOT.pos
+    wDOT, hDOT = myButtonDOT.size
+
+    if lmlist:
+
+        if lmlist[8][0] < xQ + wQ and yQ < lmlist[8][1] < yQ + hQ:
+            cv2.rectangle(img, myButtonQ.pos, (xQ + wQ, yQ + hQ), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonQ.text, (xQ + 20, yQ + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonQ.pos, (xQ + wQ, yQ + hQ), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonQ.text, (xQ + 20, yQ + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('Q', 0.15)
+
+        elif lmlist[8][0] < xW + wW and yW < lmlist[8][1] < yW + hW:
+            cv2.rectangle(img, myButtonW.pos, (xW + wW, yW + hW), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonW.text, (xW + 20, yW + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonW.pos, (xW + wW, yW + hW), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonW.text, (xW + 20, yW + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('W', 0.15)
+
+        elif lmlist[8][0] < xE + wE and yE < lmlist[8][1] < yE + hE:
+            cv2.rectangle(img, myButtonE.pos, (xE + wE, yE + hE), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonE.text, (xE + 20, yE + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonE.pos, (xE + wE, yE + hE), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonE.text, (xE + 20, yE + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('E', 0.15)
+
+        elif lmlist[8][0] < xR + wR and yR < lmlist[8][1] < yR + hR:
+            cv2.rectangle(img, myButtonR.pos, (xR + wR, yR + hR), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonR.text, (xR + 20, yR + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonR.pos, (xR + wR, yR + hR), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonR.text, (xR + 20, yR + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('R', 0.15)
+
+        elif lmlist[8][0] < xT + wT and yT < lmlist[8][1] < yT + hT:
+            cv2.rectangle(img, myButtonT.pos, (xT + wT, yT + hT), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonT.text, (xT + 20, yT + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonT.pos, (xT + wT, yT + hT), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonT.text, (xT + 20, yT + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('T', 0.15)
+
+        elif lmlist[8][0] < xY + wY and yY < lmlist[8][1] < yY + hY:
+            cv2.rectangle(img, myButtonY.pos, (xY + wY, yY + hY), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonY.text, (xY + 20, yY + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonY.pos, (xY + wY, yY + hY), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonY.text, (xY + 20, yY + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('Y', 0.15)
+
+        elif lmlist[8][0] < xU + wU and yU < lmlist[8][1] < yU + hU:
+            cv2.rectangle(img, myButtonU.pos, (xU + wU, yU + hU), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonU.text, (xU + 20, yU + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonU.pos, (xU + wU, yU + hU), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonU.text, (xU + 20, yU + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('U', 0.15)
+
+        elif lmlist[8][0] < xI + wI and yI < lmlist[8][1] < yI + hI:
+            cv2.rectangle(img, myButtonI.pos, (xI + wI, yI + hI), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonI.text, (xI + 20, yI + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonI.pos, (xI + wI, yI + hI), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonI.text, (xI + 20, yI + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('I', 0.15)
+
+        elif lmlist[8][0] < xO + wO and yO < lmlist[8][1] < yO + hO:
+            cv2.rectangle(img, myButtonO.pos, (xO + wO, yO + hO), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonO.text, (xO + 20, yO + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonO.pos, (xO + wO, yO + hO), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonO.text, (xO + 20, yO + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('O', 0.15)
+
+        elif lmlist[8][0] < xP + wP and yP < lmlist[8][1] < yP + hP:
+            cv2.rectangle(img, myButtonP.pos, (xP + wP, yP + hP), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonP.text, (xP + 20, yP + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonP.pos, (xP + wP, yP + hP), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonP.text, (xP + 20, yP + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('P', 0.15)
+
+        elif lmlist[8][0] < xA + wA and yA < lmlist[8][1] < yA + hA:
+            cv2.rectangle(img, myButtonA.pos, (xA + wA, yA + hA), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonA.text, (xA + 20, yA + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonA.pos, (xA + wA, yA + hA), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonA.text, (xA + 20, yA + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('A', 0.15)
+
+        elif lmlist[8][0] < xS + wS and yS < lmlist[8][1] < yS + hS:
+            cv2.rectangle(img, myButtonS.pos, (xS + wS, yS + hS), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonS.text, (xS + 20, yS + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonS.pos, (xS + wS, yS + hS), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonS.text, (xS + 20, yS + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('S', 0.15)
+
+        elif lmlist[8][0] < xD + wD and yD < lmlist[8][1] < yD + hD:
+            cv2.rectangle(img, myButtonD.pos, (xD + wD, yD + hD), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonD.text, (xD + 20, yD + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonD.pos, (xD + wD, yD + hD), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonD.text, (xD + 20, yD + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('D', 0.15)
+
+        elif lmlist[8][0] < xF + wF and yF < lmlist[8][1] < yF + hF:
+            cv2.rectangle(img, myButtonF.pos, (xF + wF, yF + hF), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonF.text, (xF + 20, yF + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonF.pos, (xF + wF, yF + hF), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonF.text, (xF + 20, yF + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('F', 0.15)
+
+        elif lmlist[8][0] < xG + wG and yG < lmlist[8][1] < yG + hG:
+            cv2.rectangle(img, myButtonG.pos, (xG + wG, yG + hG), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonG.text, (xG + 20, yG + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonG.pos, (xG + wG, yG + hG), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonG.text, (xG + 20, yG + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('G', 0.15)
+
+        elif lmlist[8][0] < xH + wH and yH < lmlist[8][1] < yH + hH:
+            cv2.rectangle(img, myButtonH.pos, (xH + wH, yH + hH), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonH.text, (xH + 20, yH + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonH.pos, (xH + wH, yH + hH), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonH.text, (xH + 20, yH + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('H', 0.15)
+
+        elif lmlist[8][0] < xJ + wJ and yJ < lmlist[8][1] < yJ + hJ:
+            cv2.rectangle(img, myButtonJ.pos, (xJ + wJ, yJ + hJ), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonJ.text, (xJ + 20, yJ + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonJ.pos, (xJ + wJ, yJ + hJ), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonJ.text, (xJ + 20, yJ + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('J', 0.15)
+
+        elif lmlist[8][0] < xK + wK and yK < lmlist[8][1] < yK + hK:
+            cv2.rectangle(img, myButtonK.pos, (xK + wK, yK + hK), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonK.text, (xK + 20, yK + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonK.pos, (xK + wK, yK + hK), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonK.text, (xK + 20, yK + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('K', 0.15)
+
+        elif lmlist[8][0] < xL + wL and yL < lmlist[8][1] < yL + hL:
+            cv2.rectangle(img, myButtonL.pos, (xL + wL, yL + hL), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonL.text, (xL + 20, yL + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonL.pos, (xL + wL, yL + hL), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonL.text, (xL + 20, yL + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('L', 0.15)
+
+        elif lmlist[8][0] < xZ + wZ and yZ < lmlist[8][1] < yZ + hZ:
+            cv2.rectangle(img, myButtonZ.pos, (xZ + wZ, yZ + hZ), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonZ.text, (xZ + 20, yZ + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonZ.pos, (xZ + wZ, yZ + hZ), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonZ.text, (xZ + 20, yZ + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('Z', 0.15)
+
+        elif lmlist[8][0] < xX + wX and yX < lmlist[8][1] < yX + hX:
+            cv2.rectangle(img, myButtonX.pos, (xX + wX, yX + hX), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonX.text, (xX + 20, yX + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonX.pos, (xX + wX, yX + hX), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonX.text, (xX + 20, yX + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('X', 0.15)
+
+        elif lmlist[8][0] < xC + wC and yC < lmlist[8][1] < yC + hC:
+            cv2.rectangle(img, myButtonC.pos, (xC + wC, yC + hC), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonC.text, (xC + 20, yC + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonC.pos, (xC + wC, yC + hC), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonC.text, (xC + 20, yC + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('C', 0.15)
+
+        elif lmlist[8][0] < xV + wV and yV < lmlist[8][1] < yV + hV:
+            cv2.rectangle(img, myButtonV.pos, (xV + wV, yV + hV), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonV.text, (xV + 20, yV + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonV.pos, (xV + wV, yV + hV), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonV.text, (xV + 20, yV + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('V', 0.15)
+
+        elif lmlist[8][0] < xB + wB and yB < lmlist[8][1] < yB + hB:
+            cv2.rectangle(img, myButtonB.pos, (xB + wB, yB + hB), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonB.text, (xB + 20, yB + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonB.pos, (xB + wB, yB + hB), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonB.text, (xB + 20, yB + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('B', 0.15)
+
+        elif lmlist[8][0] < xN + wN and yN < lmlist[8][1] < yN + hN:
+            cv2.rectangle(img, myButtonN.pos, (xN + wN, yN + hN), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonN.text, (xN + 20, yN + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonN.pos, (xN + wN, yN + hN), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonN.text, (xN + 20, yN + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('N', 0.15)
+
+        elif lmlist[8][0] < xM + wM and yM < lmlist[8][1] < yM + hM:
+            cv2.rectangle(img, myButtonM.pos, (xM + wM, yM + hM), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonM.text, (xM + 20, yM + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonM.pos, (xM + wM, yM + hM), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonM.text, (xM + 20, yM + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('M', 0.15)
+
+        elif lmlist[8][0] < xDEL + wDEL and yDEL < lmlist[8][1] < yDEL + hDEL:
+            cv2.rectangle(img, myButtonDEL.pos, (xDEL + wDEL, yDEL + hDEL), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonDEL.text, (xDEL + 20, yDEL + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonDEL.pos, (xDEL + wDEL, yDEL + hDEL), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonDEL.text, (xDEL + 20, yDEL + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                ptg.press('Backspace')
+
+        elif lmlist[8][0] < xENT + wENT and yENT < lmlist[8][1] < yENT + hENT:
+            cv2.rectangle(img, myButtonENT.pos, (xENT + wENT, yENT + hENT), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonENT.text, (xENT + 20, yENT + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonENT.pos, (xENT + wENT, yENT + hENT), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonENT.text, (xENT + 20, yENT + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                ptg.press('Enter')
+
+        elif lmlist[8][0] < xSPC + wSPC and ySPC < lmlist[8][1] < ySPC + hSPC:
+            cv2.rectangle(img, myButtonSPC.pos, (xSPC + wSPC, ySPC + hSPC), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonSPC.text, (xSPC + 20, ySPC + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonSPC.pos, (xSPC + wSPC, ySPC + hSPC), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonSPC.text, (xSPC + 20, ySPC + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write(' ')
+
+
+        elif lmlist[8][0] < xCOM + wCOM and yCOM < lmlist[8][1] < yCOM + hCOM:
+            cv2.rectangle(img, myButtonCOM.pos, (xCOM + wCOM, yCOM + hCOM), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonCOM.text, (xCOM + 20, yCOM + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonCOM.pos, (xCOM + wCOM, yCOM + hCOM), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonCOM.text, (xCOM + 20, yCOM + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write(',', 0.15)
+
+        elif lmlist[8][0] < xSLS + wSLS and ySLS < lmlist[8][1] < ySLS + hSLS:
+            cv2.rectangle(img, myButtonSLS.pos, (xSLS + wSLS, ySLS + hSLS), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonSLS.text, (xSLS + 20, ySLS + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonSLS.pos, (xSLS + wSLS, ySLS + hSLS), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonSLS.text, (xSLS + 20, ySLS + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('/', 0.15)
+
+        elif lmlist[8][0] < xDOT + wDOT and yDOT < lmlist[8][1] < yDOT + hDOT:
+            cv2.rectangle(img, myButtonDOT.pos, (xDOT + wDOT, yDOT + hDOT), (150, 30, 48), cv2.FILLED)
+            cv2.putText(img, myButtonDOT.text, (xDOT + 20, yDOT + 65),
+                        cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4)
+            l, _, _ = detector.findDistance(8, 12, img, draw=False)
+            if l < 30:
+                cv2.rectangle(img, myButtonDOT.pos, (xDOT + wDOT, yDOT + hDOT), (0, 255, 0), cv2.FILLED)
+                cv2.putText(img, myButtonDOT.text, (xDOT + 20, yDOT + 65),
+                            cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
+                key.write('.', 0.15)
+
+    cv2.putText(img, 'Graphosoft', (700, 612), cv2.FONT_HERSHEY_TRIPLEX, 3, (255,0,0), 4)
+    # imgResult = cvzone.overlayPNG(img, logo, [700, 612])
+    cv2.imshow('Virtual Keyboard', img)
+
+    if cv2.waitKey(1) == ord('q'):
         break

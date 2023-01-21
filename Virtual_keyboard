@@ -534,7 +534,7 @@ while True:
                 cv2.rectangle(img, myButtonSPC.pos, (xSPC + wSPC, ySPC + hSPC), (0, 255, 0), cv2.FILLED)
                 cv2.putText(img, myButtonSPC.text, (xSPC + 20, ySPC + 65),
                             cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
-                key.write(' ')
+                key.write(' ', 0.15)
 
 
         elif lmlist[8][0] < xCOM + wCOM and yCOM < lmlist[8][1] < yCOM + hCOM:
@@ -570,7 +570,7 @@ while True:
                             cv2.FONT_HERSHEY_PLAIN, 4, (0, 0, 0), 4)
                 key.write('.', 0.15)
 
-    cv2.putText(img, 'Graphosoft', (700, 612), cv2.FONT_HERSHEY_TRIPLEX, 3, (255,0,0), 4)
+    cv2.putText(img, 'Graphosoft', (700, 612), cv2.FONT_HERSHEY_TRIPLEX, 3, (255, 0, 0), 4)
     # imgResult = cvzone.overlayPNG(img, logo, [700, 612])
     cv2.imshow('Virtual Keyboard', img)
 
